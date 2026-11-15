@@ -1,0 +1,18 @@
+[project]
+name = "projmap"
+version = "0.1.0"
+description = "A living onboarding map for any repository"
+requires-python = ">=3.9"
+
+[project.scripts]
+projmap = "projmap.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["projmap"]
+
+[tool.setuptools.package-data]
+projmap = ["template.html"]

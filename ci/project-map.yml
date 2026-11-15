@@ -1,0 +1,89 @@
+name: project-map
+
+# Rebuilds the project map and publishes it to Cloudflare Pages whenever an
+# issue or pull request changes or the default branch moves, so a collaborator
+# always sees the current state. It uses no Claude usage: the hand-written
+# records only change through a pull request (see the project-map skill).
+#
+# The page is private. It sits behind Cloudflare Access, and this workflow
+# refuses to publish if it finds the address open to the public.
+#
+# Copy this to .github/workflows/ and set PAGES_PROJECT and PROJMAP_SOURCE.
+# Inert until the repository variable PROJECT_MAP_URL is set. It also needs the
+# secrets CLOUDFLARE_API_TOKEN (Pages: Edit only) and CLOUDFLARE_ACCOUNT_ID.
+#
+# Setting up, in this order, so the page is never public:
+#   1. Create the Pages project (no deployment yet).
+#   2. Put both its addresses behind Access (Cloudflare docs: Pages, Known
+#      issues, "Enable Access on your *.pages.dev domain").
+#   3. Add the two secrets and the variable. The next event publishes.
+
+on:
+  issues:
+    types: [opened, edited, closed, reopened, labeled, unlabeled]
+  # pull_request_target, not pull_request: the workflow and the code it runs
+  # always come from the default branch, so a pull request cannot change what
+  # runs next to the Cloudflare token. Nothing from it is ever checked out.
+  pull_request_target:
+    types: [opened, closed, reopened, labeled, unlabeled]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+  checks: read
+  statuses: read
+
+concurrency:
+  group: project-map
+  cancel-in-progress: true
+
+env:
+  PAGES_PROJECT: my-project-map
+  PROJMAP_SOURCE: git+https://github.com/OWNER/projmap@v0.1.0
+
+jobs:
+  publish:
+    name: Build and publish the map
+    if: vars.PROJECT_MAP_URL != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Install projmap
+        run: pip install --quiet "$PROJMAP_SOURCE"
+
+      - name: Build the map
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: projmap build --out site/index.html
+
+      - name: Say if the map is behind the repo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          projmap check || echo "::warning::The project map is behind the repo. Ask Claude to refresh the project map; it proposes the fix as a pull request."
+
+      # A visitor who is not signed in must be sent to the Access sign-in page.
+      # Anything else means the address is open, so nothing is published.
+      - name: Refuse to publish unless the address is private
+        env:
+          MAP_URL: ${{ vars.PROJECT_MAP_URL }}
+        run: |
+          target="$(curl --silent --output /dev/null --max-time 20 --user-agent 'project-map-check/1.0' --write-out '%{redirect_url}' "$MAP_URL")"
+          case "$target" in
+            https://*.cloudflareaccess.com/*) echo "Private: visitors are sent to Cloudflare Access." ;;
+            *) echo "::error::$MAP_URL does not send visitors to Cloudflare Access, so the map was not published. Put the Pages project behind Access first."; exit 1 ;;
+          esac
+
+      - name: Publish to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 pages deploy site --project-name "$PAGES_PROJECT" --branch main --commit-dirty=true

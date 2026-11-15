@@ -1,0 +1,609 @@
+<title>__TITLE__</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: views in onboarding order. Each card says one thing in one or two lines; detail opens on selection. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --sunk: #e9edf2; --ink: #16202c; --muted: #566375; --line: #d5dce5;
+  --accent: #2a59c8; --accent-soft: #e3ebfb;
+  --ok: #1b8052; --ok-soft: #dff3e9; --warn: #9a6408; --warn-soft: #fbefd3; --stop: #b93a0b; --stop-soft: #fde6dc; --idle: #7b8798;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --surface: #171e27; --sunk: #1f2833; --ink: #e5eaf0; --muted: #9ba8b8; --line: #2c3745;
+  --accent: #82a6ff; --accent-soft: #1c2a47;
+  --ok: #4fc48d; --ok-soft: #153126; --warn: #e2ad52; --warn-soft: #382c12; --stop: #f58f65; --stop-soft: #3d2118; --idle: #7f8c9d;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f141a; --surface: #171e27; --sunk: #1f2833; --ink: #e5eaf0; --muted: #9ba8b8; --line: #2c3745;
+  --accent: #82a6ff; --accent-soft: #1c2a47;
+  --ok: #4fc48d; --ok-soft: #153126; --warn: #e2ad52; --warn-soft: #382c12; --stop: #f58f65; --stop-soft: #3d2118; --idle: #7f8c9d;
+  color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); margin: 0 }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 24px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: 26px; line-height: 1.2; margin: 0; font-weight: 700; letter-spacing: -0.01em }
+h2 { font-size: 18px; margin: 0; font-weight: 600; text-wrap: balance }
+h3 { font-size: 14.5px; margin: 0; font-weight: 600 }
+p { margin: 0 }
+a { color: var(--accent) }
+code, .mono { font-family: var(--mono); font-size: 0.9em }
+code { background: var(--sunk); padding: 1px 5px; border-radius: 4px }
+.muted { color: var(--muted) }
+.small { font-size: 13px }
+.head { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 20px 0 24px; border-bottom: 1px solid var(--line) }
+.tabs button { font: 500 14px var(--sans); color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent;
+  padding: 8px 12px; margin-bottom: -1px; cursor: pointer }
+.tabs button:hover { color: var(--ink) }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent) }
+button:focus-visible, a:focus-visible, input:focus-visible, g:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.view { display: flex; flex-direction: column; gap: 32px }
+.sec { display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.lede { max-width: 68ch; color: var(--muted) }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0 }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) }
+.grid > * { min-width: 0 }
+.stack { display: flex; flex-direction: column; gap: 8px }
+.row { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center }
+.scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px }
+.scroll svg { display: block; width: 100%; min-width: 720px; height: auto }
+.label { font: 600 11px var(--sans); letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted) }
+.pill { display: inline-flex; align-items: center; gap: 5px; font: 500 12px var(--sans); padding: 2px 8px; border-radius: 999px;
+  background: var(--sunk); color: var(--muted); white-space: nowrap }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor }
+.pill.ok { background: var(--ok-soft); color: var(--ok) } .pill.warn { background: var(--warn-soft); color: var(--warn) }
+.pill.stop { background: var(--stop-soft); color: var(--stop) } .pill.acc { background: var(--accent-soft); color: var(--accent) }
+.chip { font: 500 12px var(--mono); padding: 2px 7px; border-radius: 5px; background: var(--sunk); color: var(--ink);
+  border: 1px solid transparent; text-decoration: none; white-space: nowrap }
+a.chip:hover { border-color: var(--accent) }
+.chip.done { color: var(--ok) } .chip.needs { color: var(--stop) }
+.tag { font: 500 11.5px var(--sans); padding: 1px 7px; border-radius: 5px; background: var(--sunk); color: var(--muted) }
+.tag.bad { background: var(--stop-soft); color: var(--stop) }
+.big { font: 600 28px/1 var(--sans); font-variant-numeric: tabular-nums }
+.bar { height: 8px; border-radius: 4px; background: var(--sunk); overflow: hidden }
+.bar i { display: block; height: 100%; background: var(--ok) }
+.note { border-left: 3px solid var(--line); padding: 2px 0 2px 12px }
+.note.stop { border-color: var(--stop) } .note.warn { border-color: var(--warn) }
+.btn { font: 500 13.5px var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; cursor: pointer }
+.btn:hover:not(:disabled) { border-color: var(--accent) }
+.btn:disabled { color: var(--idle); cursor: default }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface) }
+.btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent) }
+.btn.mono { font-family: var(--mono); font-size: 12.5px; padding: 5px 10px }
+.kv { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; font-size: 13.5px }
+.kv dt { color: var(--muted) } .kv dd { margin: 0; min-width: 0 }
+.eff { display: grid; grid-template-columns: minmax(110px, 170px) 1fr; gap: 6px 12px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; align-items: start }
+.eff:last-child { border-bottom: 0 }
+.story p { max-width: 70ch } .story p + p { margin-top: 8px }
+pre.sim { margin: 0; font: 12px/1.6 var(--mono); background: var(--sunk); border-radius: 8px; padding: 10px 12px; overflow-x: auto }
+details > summary { cursor: pointer; font-weight: 600; padding: 4px 0 }
+details[open] > summary { margin-bottom: 10px }
+a.card { text-decoration: none; color: inherit } a.card:hover { border-color: var(--accent) }
+
+/* pipeline */
+.pipe { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0 }
+.step .who { font-size: 12px; color: var(--muted) }
+.step.side { border-style: dashed }
+
+/* diagrams */
+svg text { font-family: var(--sans); fill: var(--ink) }
+svg .num { font: 600 13px var(--mono) }
+svg .t { font-size: 11.5px } svg .sub { font-size: 11px; fill: var(--muted) }
+svg .st { font-size: 10px; font-weight: 600; text-anchor: end; fill: var(--muted) }
+svg .ttl { font-size: 13.5px; font-weight: 600 }
+svg .n { cursor: pointer }
+svg .n rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5 }
+svg .n .dot { fill: var(--idle) }
+svg .n:hover rect { fill: var(--sunk) }
+svg .n.sel rect { stroke-width: 3 }
+svg .n.c-ok rect { stroke: var(--ok) } svg .n.c-ok .st, svg .n.c-ok .dot { fill: var(--ok) }
+svg .n.c-acc rect { stroke: var(--accent) } svg .n.c-acc .st { fill: var(--accent) }
+svg .n.c-stop rect { stroke: var(--stop) } svg .n.c-stop .st { fill: var(--stop) }
+svg .n.c-warn rect { stroke: var(--warn) } svg .n.c-warn .st, svg .n.c-warn .dot { fill: var(--warn) }
+svg .n.c-idle rect { stroke-dasharray: 5 4 }
+svg .n.dim { opacity: 0.35 }
+svg .n.lit rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; stroke-dasharray: none }
+svg .n.lit2 rect { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4 }
+svg .e { fill: none; stroke: var(--idle); stroke-width: 1.5 }
+svg .e.met { stroke: var(--ok) } svg .e.unmet { stroke-dasharray: 4 4 }
+svg .ah { fill: var(--idle) } svg .ah.met { fill: var(--ok) }
+svg.strip { display: block; width: 100%; height: auto }
+svg.strip .axis { stroke: var(--line); stroke-width: 1 }
+svg.strip .b-fixed { fill: var(--idle) } svg.strip .b-flex { fill: var(--accent) }
+svg.strip .b-zone { fill: var(--sunk); stroke: var(--line); stroke-width: 0.75 }
+svg.strip .b-bad { fill: var(--stop-soft); stroke: var(--stop); stroke-width: 1.5 }
+svg.strip text { font-size: 7.5px; fill: var(--muted); text-anchor: middle }
+.pair { display: grid; grid-template-columns: 52px 1fr; gap: 4px 8px; align-items: center }
+
+table { border-collapse: collapse; width: 100%; font-size: 13.5px }
+th { text-align: left; font: 600 11px var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap }
+td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
+tr:last-child td { border-bottom: 0 }
+td.id { font-family: var(--mono); font-weight: 600; white-space: nowrap }
+td.nw { white-space: nowrap } td.num { font-variant-numeric: tabular-nums; white-space: nowrap }
+input[type="search"] { font: 14px var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; width: 100%; max-width: 360px }
+.dec { display: grid; grid-template-columns: 48px 1fr; gap: 2px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13.5px }
+.dec:last-child { border-bottom: 0 }
+.dec > b { font: 600 13px var(--mono); grid-row: span 3 }
+.dec .l { color: var(--muted) }
+.foot { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--line) }
+
+/* touch matrix: which issue changes which module */
+table.touch th { text-transform: none; letter-spacing: 0; font: 500 11.5px var(--mono); text-align: center; padding: 8px 6px; white-space: normal; vertical-align: bottom }
+table.touch th:first-child { text-align: left }
+table.touch td { text-align: center; padding: 7px 6px; vertical-align: middle }
+table.touch td:first-child { text-align: left; white-space: nowrap; max-width: 300px; overflow: hidden; text-overflow: ellipsis }
+.mk { display: inline-block; width: 12px; height: 12px; border-radius: 50%; vertical-align: middle }
+.mk.hit { background: var(--accent) }
+.mk.guess { border: 2px solid var(--accent) }
+.mk.felt { width: 6px; height: 6px; background: var(--idle) }
+</style>
+
+<div class="wrap">
+  <div class="head">
+    <h1 id="title"></h1>
+    <p class="small muted" id="built"></p>
+  </div>
+  <p class="note warn small" id="note" hidden style="margin-top:12px"></p>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div id="view" class="view"><div class="panel stack">
+    <b>This is the map's template, not the map.</b>
+    <p class="small">It has no data until it is built. Run <code>projmap build</code> or <code>projmap serve</code>. If you opened the built file and still see this, scripts are switched off in this viewer.</p>
+  </div></div>
+  <div class="foot small muted" id="foot"></div>
+</div>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+const C = D.content;
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const md = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
+const day = iso => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+const list = k => C[k] || [];
+const T = (k, fallback) => (C.text && C.text[k]) || fallback;
+const plural = (n, word) => n + ' ' + word + (n === 1 ? '' : 's');
+const byN = Object.fromEntries(D.issues.map(i => [i.n, i]));
+const comp = Object.fromEntries(list('components').map(c => [c.id, c]));
+const rule = Object.fromEntries(list('rules').map(r => [r.id, r]));
+const groupBy = (rows, key) => rows.reduce((m, x) => ((m[x[key] || ''] = m[x[key] || ''] || []).push(x), m), {});
+const extras = view => list('lists').filter(l => (l.view || 'words') === view);
+
+/* ---------- issues: stage comes from the build, the words from content ---------- */
+const STAGE = Object.fromEntries(D.stages.map(s => [s.id, s]));
+const tone = k => (STAGE[k] || {}).tone || 'idle';
+const notes = C.notes || {};
+D.issues.forEach(i => { const w = (C.issues || {})[i.n] || {}; i.plain = w.plain || ''; i.part = w.part || ''; i.short = w.label || i.title; });
+const inStage = flag => D.issues.filter(i => (STAGE[i.stage] || {})[flag]);
+const pill = k => `<span class="pill ${tone(k) === 'idle' ? '' : tone(k)}">${esc((STAGE[k] || {}).name || k)}</span>`;
+const chip = n => byN[n] ? `<a class="chip ${tone(byN[n].stage) === 'ok' ? 'done' : tone(byN[n].stage) === 'stop' ? 'needs' : ''}" href="${byN[n].url}" target="_blank" rel="noopener" title="${esc(byN[n].plain || byN[n].title)}">#${n}</a>` : `<span class="chip">#${n}</span>`;
+const withChips = s => esc(s).replace(/#(\d+)/g, (_, d) => chip(+d));
+const prsFor = n => D.prs.filter(p => p.closes.includes(n));
+const partName = p => comp[p] ? comp[p].name : p ? p[0].toUpperCase() + p.slice(1) : '';
+const ST = { built: ['Built', 'c-ok', 'ok'], partial: ['Partly built', 'c-warn', 'warn'], stub: ['Empty placeholder', 'c-idle', ''], planned: ['Not in the repo yet', 'c-idle', ''] };
+const st = c => ST[c.status] || ST.built;
+const moduleName = m => { const c = list('components').filter(x => x.module === m); return c.length === 1 ? c[0].name : m; };
+
+/* ---------- drawing helpers ---------- */
+function wrap(text, max, lines) {
+  const out = []; let cur = '';
+  for (const w of String(text).split(/\s+/)) {
+    if ((cur + ' ' + w).trim().length > max && cur) { out.push(cur); cur = w; } else cur = (cur + ' ' + w).trim();
+  }
+  if (cur) out.push(cur);
+  if (out.length > lines) { out.length = lines; out[lines - 1] = out[lines - 1].slice(0, max - 1).replace(/[\s,.]+$/, '') + '…'; }
+  return out;
+}
+/* A curved arrow from a to b. It leaves and arrives along the given axis ('v' or 'h'). */
+function curve(a, b, axis, cls) {
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const c1 = axis === 'v' ? [a[0], a[1] + dy / 2] : [a[0] + dx / 2, a[1]], c2 = axis === 'v' ? [b[0], b[1] - dy / 2] : [b[0] - dx / 2, b[1]];
+  const ang = axis === 'v' ? (dy >= 0 ? 90 : -90) : (dx >= 0 ? 0 : 180);
+  return `<path class="e ${cls}" d="M${a[0]} ${a[1]} C${c1[0]} ${c1[1]} ${c2[0]} ${c2[1]} ${b[0]} ${b[1]}"/><path class="ah ${cls}" d="M0 0 L-8 -4 L-8 4 Z" transform="translate(${b[0]} ${b[1]}) rotate(${ang})"/>`;
+}
+/* Puts nodes in rows: a node sits one row below its deepest parent, and under the middle of its parents. */
+function layered(ids, edges, widest) {
+  const inn = {}; ids.forEach(i => { inn[i] = []; });
+  edges.forEach(([a, b]) => { if (a in inn && b in inn && a !== b) inn[b].push(a); });
+  const depth = {}, busy = {};
+  const find = i => { if (i in depth) return depth[i]; if (busy[i]) return -1; busy[i] = true;
+    let d = 0; for (const p of inn[i]) d = Math.max(d, find(p) + 1); return depth[i] = d; };
+  ids.forEach(find);
+  let rows = []; ids.forEach(i => (rows[depth[i]] = rows[depth[i]] || []).push(i));
+  const x = {};
+  rows = rows.filter(Boolean).flatMap(row => {
+    const mid = i => { const ps = inn[i].filter(p => p in x); return ps.length ? ps.reduce((s, p) => s + x[p], 0) / ps.length : 0.5; };
+    row = row.map((i, k) => [mid(i), k, i]).sort((p, q) => p[0] - q[0] || p[1] - q[1]).map(p => p[2]);
+    const parts = []; for (let k = 0; k < row.length; k += widest) parts.push(row.slice(k, k + widest));
+    parts.forEach(part => part.forEach((i, k) => { x[i] = (k + 0.5) / part.length; }));
+    return parts;
+  });
+  return rows;
+}
+function wireNodes(svg, onPick) {
+  if (!svg) return;
+  svg.querySelectorAll('.n').forEach(g => {
+    const go = () => { svg.querySelectorAll('.n.sel').forEach(x => x.classList.remove('sel')); g.classList.add('sel'); onPick(g.dataset.id); };
+    g.addEventListener('click', go);
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+}
+
+/* ---------- the parts diagram: positions from content when given, worked out otherwise ---------- */
+const SYS = (() => {
+  const cs = list('components'), BH = 68, GAP = 40, PITCH = 96;
+  const flow = (C.flow || list('links').map(l => [l.from, l.to])).filter(([a, b]) => comp[a] && comp[b]);
+  const pos = {};
+  if (cs.length && cs.every(c => Array.isArray(c.pos))) cs.forEach(c => { pos[c.id] = c.pos; });
+  else {
+    const rows = layered(cs.map(c => c.id), flow, 4), most = Math.max(1, ...rows.map(r => r.length));
+    rows.forEach((row, r) => row.forEach((id, k) => { pos[id] = [k + (most - row.length) / 2, r]; }));
+  }
+  const cols = Math.ceil(Math.max(0, ...cs.map(c => pos[c.id][0]))) + 1, lastRow = Math.max(0, ...cs.map(c => pos[c.id][1]));
+  const W = Math.max(770, cols * 250), bw = (W - 28 - (cols - 1) * GAP) / cols;
+  const box = {}; cs.forEach(c => { box[c.id] = { x: 14 + pos[c.id][0] * (bw + GAP), y: 14 + pos[c.id][1] * PITCH }; });
+  /* Each arrow picks the two facing sides; arrows sharing a side are spread along it. */
+  const ends = flow.map(([a, b]) => {
+    const A = box[a], B = box[b];
+    if (Math.abs(A.x - B.x) < bw / 2) return B.y > A.y ? [a, 'bottom', b, 'top', 'v'] : [a, 'top', b, 'bottom', 'v'];
+    return B.x > A.x ? [a, 'right', b, 'left', 'h'] : [a, 'left', b, 'right', 'h'];
+  });
+  const sides = {};
+  ends.forEach(([a, sa, b, sb], k) => {
+    (sides[a + sa] = sides[a + sa] || []).push({ k, end: 0, far: sa === 'top' || sa === 'bottom' ? box[b].x : box[b].y });
+    (sides[b + sb] = sides[b + sb] || []).push({ k, end: 1, far: sb === 'top' || sb === 'bottom' ? box[a].x : box[a].y });
+  });
+  const pts = ends.map(() => [null, null]);
+  for (const key in sides) {
+    const group = sides[key].sort((p, q) => p.far - q.far);
+    group.forEach((p, order) => {
+      const [a, sa, b, sb] = ends[p.k], id = p.end ? b : a, side = p.end ? sb : sa, B = box[id], t = (order + 1) / (group.length + 1);
+      pts[p.k][p.end] = side === 'top' ? [B.x + bw * t, B.y] : side === 'bottom' ? [B.x + bw * t, B.y + BH] : side === 'left' ? [B.x, B.y + BH * t] : [B.x + bw, B.y + BH * t];
+    });
+  }
+  const arrows = ends.map((e, k) => curve(pts[k][0], pts[k][1], e[4], '')).join('');
+  return { box, bw, BH, W, H: 14 + lastRow * PITCH + BH + 14, arrows };
+})();
+function sysSvg(id, lit, sel, faint) {
+  let svg = SYS.arrows;
+  for (const c of list('components')) {
+    const { x, y } = SYS.box[c.id], w = SYS.bw;
+    const cls = [st(c)[1], lit ? (lit.has(c.id) ? 'lit' : faint && faint.has(c.id) ? 'lit2' : 'dim') : '', sel === c.id ? 'sel' : ''].join(' ');
+    svg += `<g class="n ${cls}" data-id="${esc(c.id)}" tabindex="0" role="button" aria-label="${esc(c.name)}, ${st(c)[0]}"><rect x="${x}" y="${y}" width="${w}" height="${SYS.BH}" rx="8"/>
+      <circle class="dot" cx="${x + w - 14}" cy="${y + 17}" r="4"/><text class="ttl" x="${x + 12}" y="${y + 22}">${esc(wrap(c.name, Math.floor((w - 40) / 7), 1)[0])}</text>
+      ${wrap(c.short || '', Math.floor((w - 24) / 5.7), 2).map((l, k) => `<text class="sub" x="${x + 12}" y="${y + 40 + k * 14}">${esc(l)}</text>`).join('')}</g>`;
+  }
+  return `<div class="scroll"><svg id="${id}" viewBox="0 0 ${SYS.W} ${SYS.H}" role="img" aria-label="The parts of the project and how they connect">${svg}</svg></div>`;
+}
+const sysLegend = list('components').some(c => c.status && c.status !== 'built') ? `<div class="row small"><span class="pill ok">Built</span><span class="pill warn">Partly built</span><span class="pill">Empty or not in the repo yet</span></div>` : '';
+function strip(spec) {
+  if (!spec) return '';
+  if (typeof spec === 'string') return `<span class="small">${esc(spec)}</span>`;
+  const blocks = (spec.blocks || []).map(([a, b, kind, label, bad]) => `<rect class="${bad ? 'b-bad' : 'b-' + kind}" x="${a * 2}" y="${kind === 'zone' ? 1 : 3}" width="${(b - a) * 2}" height="${kind === 'zone' ? 17 : 13}" rx="2"/>${label ? `<text x="${a + b}" y="27">${esc(label)}</text>` : ''}`).join('');
+  return `<div class="stack" style="gap:4px">${blocks ? `<svg class="strip" viewBox="0 0 200 30" aria-hidden="true"><line class="axis" x1="0" y1="18.5" x2="200" y2="18.5"/>${blocks}</svg>` : ''}
+    ${(spec.tags || []).length ? `<div class="row" style="gap:4px">${spec.tags.map(t => `<span class="tag ${t[1] ? 'bad' : ''}">${esc(t[0])}</span>`).join('')}</div>` : ''}</div>`;
+}
+/* A hand-written list the project adds, such as error codes: cards by group, or a table. */
+function extraList(L) {
+  const groups = Object.entries(groupBy(L.rows || [], 'group'));
+  if (L.style === 'table') {
+    const cols = L.columns || [];
+    return `<details class="panel"><summary>${esc(L.title)} (${(L.rows || []).length})</summary>
+      <table><thead><tr><th>ID</th>${cols.map(c => `<th>${esc(c.label)}</th>`).join('')}</tr></thead><tbody>
+      ${groups.map(([g, rows]) => (g ? `<tr><td colspan="${cols.length + 1}" class="label" style="padding-top:14px">${esc(g)}</td></tr>` : '') + rows.map(r => `<tr data-f><td class="id">${esc(r.id)}</td>${cols.map((c, k) => `<td class="${k % 2 ? 'muted' : ''}">${esc(r[c.key])}</td>`).join('')}</tr>`).join('')).join('')}</tbody></table></details>`;
+  }
+  return `<div class="sec"><h2>${esc(L.title)}</h2>${L.lede ? `<p class="lede small">${esc(L.lede)}</p>` : ''}
+    <div class="grid">${groups.map(([g, rows]) => `<div class="panel stack">${g ? `<span class="label">${esc(g)}</span>` : ''}${rows.map(r => `<div class="small" data-f><code>${esc(r.id)}</code><br><span class="muted">${esc(r.plain)}</span></div>`).join('')}</div>`).join('')}</div></div>`;
+}
+
+/* ---------- view state ---------- */
+let walkStep = 0, knobSel = (list('knobs')[0] || {}).id, compSel = (list('components').find(c => c.id === T('firstPart', '')) || list('components')[0] || {}).id;
+
+/* ---------- Start here ---------- */
+const NEXT = {
+  words: ['Words', 'What the project\'s own words mean, each with an example.'],
+  fit: ['How it fits', 'Each part, what it takes in and gives out, and what feels a change to it.'],
+  knobs: ['What changes what', 'Pick a setting and see everything it reaches.'],
+  rules: ['Rules and decisions', 'The rules that must always hold, and every decision with its reason and its cost.'],
+  work: ['Work', 'Every issue and pull request in one line, what each touches, and what is waiting on a person.'],
+};
+function viewStart() {
+  const walk = list('walk'), s = walk[walkStep];
+  const pending = s ? (s.needs || []).filter(n => byN[n] && tone(byN[n].stage) !== 'ok') : [];
+  return `
+  ${list('story').length ? `<div class="sec">
+    <h2>${esc(T('storyTitle', 'The project in a few sentences'))}</h2>
+    <div class="panel story">${list('story').map(p => `<p>${esc(p)}</p>`).join('')}</div>
+  </div>` : ''}
+  ${s ? `<div class="sec">
+    <h2>${esc(T('walkTitle', 'Follow one example through the system'))}</h2>
+    <p class="lede small">${esc(T('walkLede', 'Step through it and watch which part does the work.'))}</p>
+    <div class="panel stack">
+      <div class="row"><span class="label">Step ${walkStep + 1} of ${walk.length}</span>${pending.length ? `<span class="pill">Not built yet</span><span class="small muted">arrives with</span>${pending.map(chip).join('')}` : (s.needs ? '<span class="pill ok">Works today</span>' : '')}</div>
+      <h3>${esc(s.title)}</h3>
+      <p style="max-width:70ch">${esc(s.text)}</p>
+      ${s.show ? `<pre class="sim">${esc(s.show.join('\n'))}</pre>` : ''}
+      <div class="row"><button class="btn" id="prev" ${walkStep ? '' : 'disabled'}>Back</button><button class="btn primary" id="next" ${walkStep < walk.length - 1 ? '' : 'disabled'}>Next step</button></div>
+    </div>
+    ${sysSvg('walk', new Set(s.lit || []), null)}
+  </div>` : ''}
+  <div class="sec">
+    <h2>Where to go next</h2>
+    <div class="grid">${Object.keys(VIEWS).filter(k => NEXT[k]).map(k => `<a class="panel stack card" href="#${k}"><h3>${NEXT[k][0]}</h3><span class="small muted">${NEXT[k][1]}</span></a>`).join('')}</div>
+  </div>`;
+}
+
+/* ---------- Words ---------- */
+function viewWords() {
+  return `
+  <div class="sec">
+    <h2>The words this project uses</h2>
+    <p class="lede small">One sentence each, with an example taken from the repo.</p>
+    <input type="search" id="q" placeholder="Filter" aria-label="Filter words">
+  </div>
+  ${Object.entries(groupBy(list('terms'), 'group')).map(([g, rows]) => `<div class="sec">${g ? `<span class="label">${esc(g)}</span>` : ''}<div class="grid">
+    ${rows.map(t => `<div class="panel stack" data-f><h3>${esc(t.word)}</h3><p class="small">${esc(t.plain)}</p>${t.example ? `<p class="small muted">For example: ${esc(t.example)}</p>` : ''}${t.see && VIEWS[t.see] ? `<a class="small" href="#${t.see}">See it in ${VIEWS[t.see][0]}</a>` : ''}</div>`).join('')}</div></div>`).join('')}
+  ${extras('words').map(extraList).join('')}`;
+}
+
+/* ---------- How it fits ---------- */
+function compDetail(id) {
+  const c = comp[id]; if (!c) return '';
+  const m = c.module && D.modules[c.module];
+  const out = list('links').filter(l => l.from === id), into = list('links').filter(l => l.to === id);
+  const effRow = (other, how) => `<div class="eff"><b>${esc((comp[other] || {}).name || other)}</b><span>${esc(how)}</span></div>`;
+  const live = m ? D.issues.filter(i => i.open && i.touches.modules.includes(c.module)) : [];
+  return `<div class="row"><h3>${esc(c.name)}</h3>${c.auto ? '' : `<span class="pill ${st(c)[2]}">${st(c)[0]}</span>`}</div>
+    ${c.does ? `<p>${esc(c.does)}</p>` : ''}
+    <dl class="kv">${c.takes ? `<dt>Takes in</dt><dd>${esc(c.takes)}</dd>` : ''}${c.gives ? `<dt>Gives out</dt><dd>${esc(c.gives)}</dd>` : ''}${c.built ? `<dt>In the repo today</dt><dd>${esc(c.built)}</dd>` : ''}
+      ${(c.next || []).length ? `<dt>More arrives with</dt><dd class="row">${c.next.map(chip).join('')}</dd>` : ''}
+      ${m ? `<dt>Code</dt><dd><code>${esc(m.path)}</code>: ${plural(m.lines, 'line')} in ${plural(m.files, 'file')}, ${plural(m.tests, 'test')}${m.uses.length ? '. Imports ' + m.uses.join(', ') : ''}</dd>` : ''}
+      ${live.length ? `<dt>Open issues that touch it</dt><dd class="row">${live.map(i => chip(i.n)).join('')}</dd>` : ''}</dl>
+    <div class="grid">
+      <div class="stack" style="gap:0"><span class="label">If you change it, these feel it</span>${out.length ? out.map(l => effRow(l.to, l.how)).join('') : '<span class="small muted">Nothing downstream.</span>'}</div>
+      <div class="stack" style="gap:0"><span class="label">It feels a change in</span>${into.length ? into.map(l => effRow(l.from, l.how)).join('') : '<span class="small muted">Nothing upstream.</span>'}</div>
+    </div>`;
+}
+function viewFit() {
+  return `
+  <div class="sec">
+    <h2>The parts, and how they connect</h2>
+    <p class="lede small">${esc(T('fitLede', 'An arrow means the part at its tail feeds, or is used by, the part at its head. Select a box.'))}</p>
+    ${sysLegend}
+    ${sysSvg('sys', null, compSel)}
+    <div class="panel stack" id="sdetail">${compDetail(compSel)}</div>
+  </div>
+  ${list('commands').length ? `<div class="sec">
+    <h2>Commands you will use</h2>
+    <div class="scroll"><table><tbody>${list('commands').map(c => `<tr><td class="id">${esc(c.cmd)}</td><td>${esc(c.plain)}</td></tr>`).join('')}</tbody></table></div>
+  </div>` : ''}`;
+}
+
+/* ---------- What changes what ---------- */
+function reachLabel(to) {
+  if (comp[to]) return `<b>${esc(comp[to].name)}</b>`;
+  if (rule[to]) return `<span><a class="chip" href="#rules">${esc(to)}</a> <span class="muted">${esc(rule[to].name)}</span></span>`;
+  const [kind, name] = to.includes(':') ? to.split(':') : ['', to];
+  return `<span><code>${esc(name)}</code> <span class="muted">${esc(kind)}</span></span>`;
+}
+function viewKnobs() {
+  const k = list('knobs').find(x => x.id === knobSel) || list('knobs')[0];
+  const lit = new Set(k.reaches.map(r => r.to).filter(t => comp[t]));
+  const rulesPart = T('rulesPart', '');
+  if (comp[rulesPart] && k.reaches.some(r => rule[r.to])) lit.add(rulesPart);
+  return `
+  <div class="sec">
+    <h2>Pick an input and see what it reaches</h2>
+    <p class="lede small">These are the values that steer the result. Changing one, or the code that reads it, affects every highlighted part and rule.</p>
+    <div class="row">${list('knobs').map(x => `<button class="btn mono" data-knob="${esc(x.id)}" aria-pressed="${x.id === k.id}">${esc(x.name)}</button>`).join('')}</div>
+    <div class="panel stack">
+      <div class="row"><h3><code>${esc(k.name)}</code></h3></div>
+      <p>${esc(k.plain)}</p>
+      <dl class="kv">${k.default ? `<dt>Default</dt><dd>${esc(k.default)}</dd>` : ''}${k.where ? `<dt>Lives in</dt><dd><code>${esc(k.where)}</code></dd>` : ''}</dl>
+      <div class="stack" style="gap:0"><span class="label">What it reaches</span>${k.reaches.map(r => `<div class="eff">${reachLabel(r.to)}<span>${esc(r.how)}</span></div>`).join('')}</div>
+    </div>
+    ${sysSvg('ksys', lit, null)}
+  </div>`;
+}
+
+/* ---------- Rules and decisions ---------- */
+const RS = { ok: ['Checked in code', 'ok'], part: ['Half checked in code', 'warn'], todo: ['Not checked yet', ''] };
+const rulesNoun = (C.rulesIntro || {}).noun || 'Rules';
+function viewRules() {
+  const rules = list('rules'), intro = C.rulesIntro || {};
+  const inCode = rules.filter(r => r.state === 'ok').length, half = rules.filter(r => r.state === 'part').length;
+  const pictures = rules.some(r => r.ok && r.ok.blocks && r.ok.blocks.length);
+  return `
+  ${rules.length ? `<div class="sec">
+    <h2>${esc(intro.title || 'The rules that must always hold')}</h2>
+    ${intro.text ? `<div class="panel stack"><p style="max-width:70ch">${esc(intro.text)}</p>
+      <p class="small muted">${inCode} of ${rules.length} are checked in code today${half ? ', ' + half + ' half checked' : ''}.</p></div>` : ''}
+    ${pictures && C.stripLegend ? `<div class="row small">${C.stripLegend.map(([label, kind]) => kind === 'bad' ? `<span class="tag bad">${esc(label)}</span>` : `<span class="tag" style="background:var(--${kind === 'flex' ? 'accent' : 'idle'});color:var(--surface)">${esc(label)}</span>`).join('')}</div>` : ''}
+    <div class="grid">${rules.map(r => `<div class="panel stack" data-f><div class="row"><b class="mono">${esc(r.id)}</b><h3>${esc(r.name)}</h3></div>
+      <p class="small">${esc(r.plain)}</p>
+      ${r.ok || r.bad ? `<div class="pair"><span class="label">Kept</span>${strip(r.ok)}<span class="label">Broken</span>${strip(r.bad)}</div>` : ''}
+      <div class="row small">${RS[r.state] ? `<span class="pill ${RS[r.state][1]}">${RS[r.state][0]}</span>` : ''}${r.issue ? chip(r.issue) : ''}</div></div>`).join('')}</div>
+    ${list('ruleNotes').map(n => `<p class="note small">${esc(n)}</p>`).join('')}
+  </div>` : ''}
+  ${list('decisions').length || list('open').length ? `<div class="sec">
+    <h2>Decisions: what, why, and what it costs</h2>
+    <p class="lede small">${md(T('decisionsLede', 'Three lines each. The full text lives in the repo\'s own documents.'))}</p>
+    <input type="search" id="q" placeholder="Filter" aria-label="Filter decisions">
+  </div>` : ''}
+  ${list('open').length ? `<div class="sec"><span class="label">Still open</span><div class="panel">${list('open').map(o => `<div class="dec" data-f><b style="color:var(--stop)">open</b><span><b>${esc(o.what)}.</b></span><span class="l">${withChips(o.why)}</span></div>`).join('')}</div></div>` : ''}
+  ${Object.entries(groupBy(list('decisions'), 'group')).map(([g, rows]) => `<div class="sec">${g ? `<span class="label">${esc(g)}</span>` : ''}<div class="panel">
+    ${rows.map(d => `<div class="dec" data-f><b>${esc(d.id)}</b><span><b>${esc(d.what)}</b></span><span><span class="l">Why: </span>${esc(d.why)}</span><span><span class="l">Cost: </span>${esc(d.cost)}</span></div>`).join('')}</div></div>`).join('')}
+  <div class="sec">
+    ${list('standing').length ? `<details class="panel"><summary>Standing rules for the whole repo (${list('standing').length})</summary>
+      <table><tbody>${list('standing').map(s => `<tr data-f><td><b>${esc(s.rule)}</b></td><td>${esc(s.means)}</td><td class="small muted">${withChips(s.from || '')}</td></tr>`).join('')}</tbody></table></details>` : ''}
+    ${extras('rules').map(extraList).join('')}
+  </div>`;
+}
+
+/* ---------- Work ---------- */
+const backlog = D.backlog.filter(n => byN[n]);
+const BASIS = { merged: 'from its merged pull request', open: 'from its open pull request', predicted: 'predicted from the issue text', none: '' };
+const moduleCols = Object.keys(D.modules);
+function touchRows(i) {
+  const t = i.touches, name = m => `<span class="tag">${esc(moduleName(m))}</span>`;
+  if (t.basis === 'none') return `<dt>Touches</dt><dd class="muted">Not known yet. The issue names no module and has no pull request.</dd>`;
+  return `<dt>Touches</dt><dd><span class="row">${t.modules.map(name).join('')}${t.other ? `<span class="tag">${plural(t.other, 'file')} outside the modules</span>` : ''}<span class="small muted">${BASIS[t.basis]}</span></span></dd>
+    ${t.affects.length ? `<dt>Then felt by</dt><dd><span class="row">${t.affects.map(name).join('')}<span class="small muted">because they import what it touches</span></span></dd>` : ''}`;
+}
+function issueDetail(n) {
+  const i = byN[n]; if (!i) return '';
+  const blocks = D.issues.filter(x => x.deps.includes(n)), prs = prsFor(n), note = notes[n], stage = STAGE[i.stage] || {};
+  return `<div class="row">${chip(n)}${pill(i.stage)}${i.part ? `<span class="tag">${esc(partName(i.part))}</span>` : ''}</div>
+    <p><b>${esc(i.plain || i.title)}</b></p>
+    ${note && stage.attention ? `<p class="note stop small">${esc(note)}</p>` : ''}
+    <dl class="kv">${touchRows(i)}
+      <dt>Waits for</dt><dd class="row">${i.deps.length ? i.deps.map(chip).join('') : 'nothing'}</dd>
+      <dt>Unblocks</dt><dd class="row">${blocks.length ? blocks.map(x => chip(x.n)).join('') : 'nothing yet'}</dd>
+      ${i.size || i.criteria ? `<dt>Size</dt><dd>${[i.size ? 'about ' + i.size + ' changed lines' : '', i.criteria ? plural(i.criteria, 'acceptance criterion').replace('criterions', 'criteria') : ''].filter(Boolean).join(', ')}</dd>` : ''}
+      ${D.gate ? `<dt>${esc(D.gate)}</dt><dd>${i.gate === 'ready' ? 'Passed' : i.gate === 'needs' ? 'Asked a question' : 'Has not looked at it yet'}</dd>` : ''}
+      ${prs.length ? `<dt>Pull request</dt><dd>${prs.map(p => `<a class="chip" href="${p.url}" target="_blank" rel="noopener">PR ${p.n}</a> ${p.mergedAt ? 'merged ' + day(p.mergedAt) : p.state === 'OPEN' ? 'open, checks ' + p.checks : 'closed without merging'}${p.rounds ? ', ' + plural(p.rounds, 'review round') : ''}`).join('<br>')}</dd>` : ''}</dl>`;
+}
+function dagSvg() {
+  const NW = 176, NH = 64, PITCH = 92, W = 770;
+  const edges = backlog.flatMap(n => byN[n].deps.filter(d => backlog.includes(d)).map(d => [d, n]));
+  const rows = layered(backlog, edges, 4), at = {};
+  rows.forEach((row, r) => row.forEach((n, k) => { at[n] = { cx: W * (k + 0.5) / row.length, top: 16 + r * PITCH }; }));
+  let svg = edges.map(([a, b]) => at[b].top > at[a].top
+    ? curve([at[a].cx, at[a].top + NH], [at[b].cx, at[b].top], 'v', byN[a].open ? 'unmet' : 'met')
+    : curve([at[a].cx + NW / 2, at[a].top + NH / 2], [at[b].cx - NW / 2, at[b].top + NH / 2], 'h', byN[a].open ? 'unmet' : 'met')).join('');
+  for (const n of backlog) {
+    const i = byN[n], p = at[n], x = p.cx - NW / 2, name = (STAGE[i.stage] || {}).name || i.stage;
+    svg += `<g class="n c-${tone(i.stage)}" data-id="${n}" tabindex="0" role="button" aria-label="Issue ${n}, ${esc(name)}"><rect x="${x}" y="${p.top}" width="${NW}" height="${NH}" rx="8"/>
+      <text class="num" x="${x + 12}" y="${p.top + 21}">#${n}</text><text class="st" x="${x + NW - 12}" y="${p.top + 20}">${esc(wrap(name, 20, 1)[0])}</text>
+      ${wrap(i.short, 27, 2).map((l, k) => `<text class="t" x="${x + 12}" y="${p.top + 38 + k * 14}">${esc(l)}</text>`).join('')}</g>`;
+  }
+  return `<div class="scroll"><svg id="dag" viewBox="0 0 ${W} ${16 + (rows.length - 1) * PITCH + NH + 16}" role="img" aria-label="Which issue waits for which">${svg}</svg></div>`;
+}
+function touchTable() {
+  const open = D.issues.filter(i => i.open).reverse(), recent = D.issues.filter(i => !i.open && i.touches.basis === 'merged').slice(-5).reverse();
+  const rows = open.concat(recent).filter(i => i.touches.basis !== 'none');
+  if (!rows.length || !moduleCols.length) return '';
+  const cell = (i, m) => i.touches.modules.includes(m) ? `<span class="mk ${i.touches.basis === 'predicted' ? 'guess' : 'hit'}" title="${i.touches.basis === 'predicted' ? 'Predicted to change' : 'Changes'} ${esc(m)}"></span>` : i.touches.affects.includes(m) ? `<span class="mk felt" title="${esc(m)} imports what this changes"></span>` : '';
+  return `<div class="sec">
+    <h2>What each issue touches</h2>
+    <p class="lede small">One row per open issue, then the last few merged. A column is a module in the code.</p>
+    <div class="row small"><span><span class="mk hit"></span> changed by its pull request</span><span><span class="mk guess"></span> predicted from the issue text</span><span><span class="mk felt"></span> feels it, because it imports a changed module</span></div>
+    <div class="scroll"><table class="touch"><thead><tr><th>Issue</th>${moduleCols.map(m => `<th>${esc(m)}</th>`).join('')}<th>Other files</th></tr></thead><tbody>
+    ${rows.map(i => `<tr><td>${chip(i.n)} <span class="small ${i.open ? '' : 'muted'}">${esc(i.short)}</span></td>${moduleCols.map(m => `<td>${cell(i, m)}</td>`).join('')}<td class="small muted">${i.touches.other || ''}</td></tr>`).join('')}</tbody></table></div>
+  </div>`;
+}
+function viewWork() {
+  const needs = inStage('attention'), moving = inStage('moving').filter(i => !needs.includes(i)), go = inStage('canStart');
+  const ungated = D.gate ? D.issues.filter(i => i.open && !i.gate).length : 0;
+  const done = backlog.filter(n => tone(byN[n].stage) === 'ok').length, rules = list('rules'), rulesIn = rules.filter(r => r.state === 'ok').length;
+  const firstPick = (needs[0] || moving[0] || go[0] || byN[backlog[0]] || {}).n;
+  const stepCount = s => D.issues.filter(i => s.stages.includes(i.stage));
+  return `
+  <div class="sec">
+    <h2>What is waiting on a person</h2>
+    ${needs.length ? needs.map(i => `<div class="panel stack"><div class="row">${chip(i.n)}<b>${esc(i.plain || i.title)}</b>${pill(i.stage)}</div>
+      ${notes[i.n] || STAGE[i.stage].hint ? `<p class="note ${tone(i.stage) === 'stop' ? 'stop' : ''} small">${esc(notes[i.n] || '')} ${md(STAGE[i.stage].hint || '')}</p>` : ''}</div>`).join('') : '<div class="panel muted">Nothing is waiting on a person.</div>'}
+    ${moving.length ? `<div class="panel stack"><b>Moving now</b>${moving.map(i => `<div class="row">${chip(i.n)}<span>${esc(i.plain || i.title)}</span>${pill(i.stage)}</div>`).join('')}</div>`
+      : `<div class="panel stack"><b>Nothing is being built right now</b>${ungated ? `<p class="small">${plural(ungated, 'open issue')} ${ungated === 1 ? 'has' : 'have'} not been through the ${esc(D.gate.toLowerCase())}.</p>` : ''}
+        ${go.length ? `<div class="row small"><span class="muted">Nothing blocks these, so they can go first:</span>${go.slice(0, 12).map(i => chip(i.n)).join('')}</div>` : ''}</div>`}
+    ${D.statusDoc && D.statusDoc.stale ? `<p class="note warn small"><code>${esc(D.statusDoc.path)}</code> says it was last updated on ${esc(D.statusDoc.date)}. Pull requests have merged since, so it is behind this page.</p>` : ''}
+  </div>
+  <div class="sec">
+    <h2>How far along</h2>
+    <div class="grid">
+      ${backlog.length ? `<div class="panel stack"><span class="label">Current backlog</span><span class="big">${done} of ${backlog.length}</span><div class="bar"><i style="width:${100 * done / backlog.length}%"></i></div><span class="small muted">issues merged</span></div>` : ''}
+      ${rules.length ? `<div class="panel stack"><span class="label">${esc(rulesNoun)} checked in code</span><span class="big">${rulesIn} of ${rules.length}</span><div class="bar"><i style="width:${100 * rulesIn / rules.length}%"></i></div><span class="small muted">${rules.filter(r => r.state === 'part').length ? 'plus ' + rules.filter(r => r.state === 'part').length + ' half checked' : 'the rest arrive with later issues'}</span></div>` : ''}
+      <div class="panel stack"><span class="label">Pull requests merged</span><span class="big">${D.prs.filter(p => p.mergedAt).length}</span><span class="small muted">${D.prs.filter(p => p.state === 'OPEN').length} open, ${D.prs.filter(p => p.state === 'CLOSED').length} closed without merging</span></div>
+    </div>
+  </div>
+  <div class="sec">
+    <h2>How an issue travels</h2>
+    <div class="pipe">${D.pipeline.map(s => { const at = stepCount(s); return `<div class="step ${s.side ? 'side' : ''}"><div class="row"><h3>${esc(s.name)}</h3><span class="pill ${at.length && !s.countOnly ? (s.side ? 'stop' : 'acc') : ''}">${at.length}</span></div>${s.label ? `<code class="small" style="align-self:flex-start">${esc(s.label)}</code>` : ''}<span class="who">${esc(s.who || '')}</span>
+      <div class="row">${s.countOnly ? '' : at.slice(0, 14).map(i => chip(i.n)).join('')}</div></div>`; }).join('')}</div>
+  </div>
+  ${backlog.length ? `<div class="sec">
+    <h2>The backlog, in build order</h2>
+    <p class="lede small">An arrow means the lower issue waits for the upper one. Green arrows are satisfied. Select an issue to see what it touches.</p>
+    <div class="row small">${D.stages.filter(s => backlog.some(n => byN[n].stage === s.id)).map(s => pill(s.id)).join('')}</div>
+    ${dagSvg()}
+    <div class="panel stack" id="idetail" data-first="${firstPick || ''}">${firstPick ? issueDetail(firstPick) : '<span class="muted small">Select an issue in the tree.</span>'}</div>
+  </div>` : ''}
+  ${touchTable()}
+  <div class="sec">
+    <h2>Every issue in one line</h2>
+    <input type="search" id="q" placeholder="Filter" aria-label="Filter issues">
+    <div class="scroll"><table><thead><tr><th>Issue</th><th>In plain words</th><th>Part</th><th>State</th></tr></thead><tbody>
+    ${D.issues.slice().reverse().map(i => `<tr data-f><td class="id">${chip(i.n)}</td><td>${esc(i.plain || i.title)}${i.plain ? '' : ' <span class="tag">title only</span>'}</td><td class="nw small muted">${esc(partName(i.part))}</td><td class="nw">${pill(i.stage)}</td></tr>`).join('')}</tbody></table></div>
+  </div>
+  <div class="sec">
+    <details class="panel"><summary>All ${plural(D.prs.length, 'pull request')}</summary>
+    <table><thead><tr><th>PR</th><th>Title</th><th>Closes</th><th>Touches</th><th>State</th></tr></thead><tbody>
+    ${D.prs.map(p => `<tr><td class="id"><a class="chip" href="${p.url}" target="_blank" rel="noopener">${p.n}</a></td><td>${md(p.title)}</td><td class="nw">${p.closes.map(chip).join(' ')}</td><td class="small muted">${esc(p.touches.join(', '))}</td>
+      <td class="nw"><span class="pill ${p.mergedAt ? 'ok' : p.state === 'OPEN' ? 'acc' : ''}">${p.mergedAt ? 'Merged ' + day(p.mergedAt) : p.state === 'OPEN' ? 'Open' : 'Closed, no merge'}</span></td></tr>`).join('')}</tbody></table></details>
+  </div>`;
+}
+
+/* ---------- routing ---------- */
+const VIEWS = {};
+if (list('story').length || list('walk').length) VIEWS.start = ['Start here', viewStart];
+if (list('terms').length || extras('words').length) VIEWS.words = ['Words', viewWords];
+if (list('components').length) VIEWS.fit = ['How it fits', viewFit];
+if (list('knobs').length) VIEWS.knobs = ['What changes what', viewKnobs];
+if (list('rules').length || list('decisions').length) VIEWS.rules = ['Rules and decisions', viewRules];
+VIEWS.work = ['Work', viewWork];
+const HOME = Object.keys(VIEWS)[0];
+
+document.title = D.title;
+$('#title').textContent = D.title;
+$('#built').innerHTML = `${D.live ? 'Live. Facts' : 'Built'} from GitHub at ${esc(D.generated)}`;
+if (D.note) { $('#note').hidden = false; $('#note').textContent = D.note; }
+$('#foot').innerHTML = D.drift.length
+  ? `<b style="color:var(--stop)">This map is behind the repo.</b> ${D.drift.map(d => `${esc(d.kind)} <code>${esc(d.id)}</code> ${esc(d.problem)}`).join('; ')}. Add the missing records to <code>${esc(D.contentPath)}</code>.`
+  : `Everything the map tracks in the repo has a record here. Rebuild with <code>${esc(D.rebuild)}</code>.`;
+$('#tabs').innerHTML = Object.entries(VIEWS).map(([k, v]) => `<button role="tab" id="tab-${k}" data-k="${k}">${v[0]}</button>`).join('');
+$('#tabs').addEventListener('click', e => { const k = e.target.dataset && e.target.dataset.k; if (k) location.hash = k; });
+function show(focusId) {
+  const k = VIEWS[location.hash.slice(1)] ? location.hash.slice(1) : HOME;
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.k === k));
+  const view = $('#view');
+  view.innerHTML = VIEWS[k][1]();
+  const on = (sel, fn) => { const el = $(sel); if (el && el.addEventListener) el.addEventListener('click', fn); };
+  if (k === 'start') {
+    on('#prev', () => { walkStep = Math.max(0, walkStep - 1); show('prev'); });
+    on('#next', () => { walkStep = Math.min(list('walk').length - 1, walkStep + 1); show('next'); });
+    wireNodes($('#walk'), id => { compSel = id; location.hash = 'fit'; });
+  }
+  if (k === 'fit') wireNodes($('#sys'), id => { compSel = id; $('#sdetail').innerHTML = compDetail(id); });
+  if (k === 'knobs') {
+    view.querySelectorAll('[data-knob]').forEach(b => b.addEventListener('click', () => { knobSel = b.dataset.knob; show(); }));
+    wireNodes($('#ksys'), id => { compSel = id; location.hash = 'fit'; });
+  }
+  if (k === 'work') {
+    const dag = $('#dag'), detail = $('#idetail');
+    wireNodes(dag, id => { detail.innerHTML = issueDetail(+id); });
+    const node = dag && detail && detail.dataset.first && dag.querySelector(`[data-id="${detail.dataset.first}"]`); if (node) node.classList.add('sel');
+  }
+  const q = $('#q');
+  if (q && q.addEventListener) q.addEventListener('input', e => {
+    const text = e.target.value.trim().toLowerCase();
+    view.querySelectorAll('[data-f]').forEach(el => { el.hidden = !!text && !el.textContent.toLowerCase().includes(text); });
+  });
+  const focus = focusId && document.getElementById(focusId);
+  if (focus && focus.focus) { if (focus.disabled) (document.getElementById(focusId === 'next' ? 'prev' : 'next') || focus).focus(); else focus.focus(); }
+}
+window.addEventListener('hashchange', () => show());
+show();
+
+/* Served by `projmap serve`: reload when the build behind the page changes. */
+if (D.live) setInterval(async () => {
+  try { const v = await (await fetch('version', { cache: 'no-store' })).text(); if (v && v !== D.version + (D.note || '')) location.reload(); } catch (e) { /* server stopped; keep the page */ }
+}, 4000);
+</script>

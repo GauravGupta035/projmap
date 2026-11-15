@@ -1,0 +1,1 @@
+{ "name": "projmap", "version": "0.1.0", "description": "A pane beside the chat showing the repo's project map: what waits on a person, what is moving, and what each open issue touches.", "types": "./types/index.d.ts" }
