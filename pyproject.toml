@@ -3,6 +3,7 @@ name = "projmap"
 version = "0.1.0"
 description = "A living onboarding map for any repository"
 requires-python = ">=3.9"
+license = { text = "MIT" }
 
 [project.scripts]
 projmap = "projmap.cli:main"
