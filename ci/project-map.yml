@@ -31,6 +31,8 @@ on:
   workflow_dispatch:
 
 permissions:
+  # actions: gh reads each pull request's checks, which name their workflow run.
+  actions: read
   contents: read
   issues: read
   pull-requests: read
