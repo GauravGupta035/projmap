@@ -33,3 +33,7 @@ Needs python3 (standard library only) and a signed-in `gh`.
 - `mod/projmap/`: a Claude Code mod that shows a summary pane beside the chat.
 - `ci/project-map.yml`: a GitHub Actions template that rebuilds the page on
   every issue and pull request change.
+
+## Licence
+
+MIT. See `LICENSE`.
