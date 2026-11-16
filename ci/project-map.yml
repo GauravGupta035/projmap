@@ -39,9 +39,11 @@ permissions:
   checks: read
   statuses: read
 
-concurrency:
-  group: project-map
-  cancel-in-progress: true
+# No concurrency group on purpose. One change, such as merging a pull request,
+# fires several events at once, and a group cancels all but the last run,
+# which shows as a failure. Instead each run waits a little, and a run that
+# finds a newer run of this workflow stops there, green, and leaves the
+# publishing to it.
 
 env:
   PAGES_PROJECT: my-project-map
@@ -54,19 +56,36 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - name: Wait, then leave it to a newer run if there is one
+        id: first-look
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 20
+          newer="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$GITHUB_WORKFLOW" --limit 50 \
+            --json databaseId --jq "[.[] | select(.databaseId > $GITHUB_RUN_ID)] | length")"
+          if [ "$newer" -gt 0 ]; then
+            echo "A newer run of this workflow will publish the map, so this one stops here."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.first-look.outputs.skip != 'true'
         with:
           ref: ${{ github.event.repository.default_branch }}
 
       - name: Install projmap
+        if: steps.first-look.outputs.skip != 'true'
         run: pip install --quiet "$PROJMAP_SOURCE"
 
       - name: Build the map
+        if: steps.first-look.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: projmap build --out site/index.html
 
       - name: Say if the map is behind the repo
+        if: steps.first-look.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -75,6 +94,7 @@ jobs:
       # A visitor who is not signed in must be sent to the Access sign-in page.
       # Anything else means the address is open, so nothing is published.
       - name: Refuse to publish unless the address is private
+        if: steps.first-look.outputs.skip != 'true'
         env:
           MAP_URL: ${{ vars.PROJECT_MAP_URL }}
         run: |
@@ -84,7 +104,21 @@ jobs:
             *) echo "::error::$MAP_URL does not send visitors to Cloudflare Access, so the map was not published. Put the Pages project behind Access first."; exit 1 ;;
           esac
 
+      - name: Leave it to a newer run if one started meanwhile
+        id: last-look
+        if: steps.first-look.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          newer="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$GITHUB_WORKFLOW" --limit 50 \
+            --json databaseId --jq "[.[] | select(.databaseId > $GITHUB_RUN_ID)] | length")"
+          if [ "$newer" -gt 0 ]; then
+            echo "A newer run of this workflow will publish the map, so this one stops here."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to Cloudflare Pages
+        if: steps.first-look.outputs.skip != 'true' && steps.last-look.outputs.skip != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
