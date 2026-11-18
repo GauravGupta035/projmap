@@ -255,8 +255,10 @@ def fetch_github(root, config):
                   "statusCheckRollup,files"):
         texts = [c.get("body") or "" for c in raw.get("comments", []) + raw.get("reviews", [])]
         rounds = [int(n) for text in texts for n in re.findall(r"(?i)\bround\s*:?\s*(\d)\b", text)]
+        # A check run that has not finished has no conclusion yet; a status reports PENDING or EXPECTED.
         checks = [c.get("conclusion") or c.get("state") or "PENDING" for c in raw.get("statusCheckRollup") or []]
-        failing = [c for c in checks if c not in ("SUCCESS", "SKIPPED", "NEUTRAL")]
+        waiting = [c for c in checks if c in ("PENDING", "EXPECTED")]
+        failing = [c for c in checks if c not in ("SUCCESS", "SKIPPED", "NEUTRAL", "PENDING", "EXPECTED")]
         named = re.findall(spec.get("prIssuePattern", PR_ISSUE), raw["title"] + "\n" + (raw.get("body") or ""))
         closes = set(ref["number"] for ref in raw.get("closingIssuesReferences") or [])
         closes |= set(int(n) for groups in named for n in (groups if isinstance(groups, tuple) else (groups,)) if n)
@@ -264,7 +266,7 @@ def fetch_github(root, config):
             "n": raw["number"], "title": raw["title"], "state": raw["state"], "mergedAt": raw.get("mergedAt"),
             "labels": [label["name"] for label in raw["labels"]], "closes": sorted(closes),
             "rounds": max(rounds) if rounds else 0,
-            "checks": "none" if not checks else ("passed" if not failing else "failing"),
+            "checks": "none" if not checks else "failing" if failing else "pending" if waiting else "passed",
             "url": raw["url"], "paths": [f["path"] for f in raw.get("files") or []],
         })
     return {"issues": sorted(issues, key=lambda i: i["n"]), "prs": sorted(prs, key=lambda p: -p["n"]),
@@ -558,7 +560,7 @@ def cmd_init(args):
     (folder / "content.json").write_text(json.dumps(content, indent=2) + "\n")
     (folder / ".gitignore").write_text("out/\n")
     print(f"projmap: wrote {shown(root, folder)}/projmap.json and content.json")
-    print("projmap: modules found: " + ", ".join(scan_modules(root, config)) or "none")
+    print("projmap: modules found: " + (", ".join(scan_modules(root, config)) or "none"))
     print("projmap: run `projmap serve` to see it. The map already shows the work and the modules;")
     print("         the words, rules and decisions appear as content.json is filled in.")
 
