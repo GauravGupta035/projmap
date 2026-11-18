@@ -1,0 +1,11 @@
+{
+  "name": "projmap",
+  "owner": { "name": "Gaurav Gupta" },
+  "plugins": [
+    {
+      "name": "projmap",
+      "source": "./mod/projmap",
+      "description": "A pane beside the chat showing the repo's project map: what waits on a person, what is moving, and what each open issue touches."
+    }
+  ]
+}
