@@ -69,6 +69,16 @@ dependency tree, what each issue touches) and a diagram of its modules.
 - `.projmap/`: this repo's own map, as a worked example. Run `projmap serve`
   in a checkout to see it.
 
+## Develop
+
+The tests use only the standard library and stub out GitHub, so they need no
+network and no `gh`:
+
+    python3 -m unittest discover -s tests
+
+CI runs them on Python 3.9, 3.11 and 3.13, and builds and checks this repo's
+own map, on every pull request.
+
 ## Licence
 
 MIT. See `LICENSE`.

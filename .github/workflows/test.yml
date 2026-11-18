@@ -1,0 +1,61 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.9 is the oldest version pyproject.toml allows.
+        python: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Run the tests
+        run: python -m unittest discover -s tests -v
+
+  map:
+    name: Build and check projmap's own map
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      # The same reads the CI template needs: issues, pull requests and their checks.
+      actions: read
+      contents: read
+      issues: read
+      pull-requests: read
+      checks: read
+      statuses: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install from this checkout
+        run: pip install --quiet .
+      - name: Build the page
+        run: projmap build --out site/index.html
+      # A record over its word cap fails the job. Drift only warns: a newly opened
+      # issue should not fail every pull request until the map gets a line for it.
+      - name: Check the map
+        run: |
+          out="$(projmap check --json)" || true
+          if [ -z "$out" ]; then echo "::error::projmap check did not run"; exit 1; fi
+          echo "$out"
+          echo "$out" | jq -r '.drift[] | "::warning::The project map is behind: \(.kind) \(.id) \(.problem)"'
+          test "$(echo "$out" | jq '.caps | length')" -eq 0
