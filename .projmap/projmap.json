@@ -1,0 +1,13 @@
+{
+  "title": "projmap project map",
+  "modules": {
+    "list": [
+      {"name": "tool", "path": "projmap"},
+      {"name": "pane", "path": "mod/projmap"},
+      {"name": "skill", "path": "skill/project-map"},
+      {"name": "ci", "path": "ci"}
+    ],
+    "extensions": [".py", ".html", ".tsx", ".ts", ".md", ".yml"]
+  },
+  "ids": []
+}

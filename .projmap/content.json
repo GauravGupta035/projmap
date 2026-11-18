@@ -1,0 +1,53 @@
+{
+  "story": [
+    "projmap builds one page that explains a repository to someone new: its words, parts, rules, decisions and issues.",
+    "The tool gathers live facts itself: issues and pull requests through gh, modules and their imports, and the files each pull request changed.",
+    "People, helped by a Claude skill, write short records in content.json, and every field has a word cap.",
+    "A drift check compares the two, so the page says when the records are behind the repo.",
+    "The page is served locally, built as one HTML file, published by a CI template, or summarised in a Claude Code pane."
+  ],
+  "terms": [
+    {"id": "record", "group": "Content", "word": "Record", "plain": "One short hand-written entry in content.json, such as a term, a component or a decision.", "example": "A decision record has what, why and cost."},
+    {"id": "live-fact", "group": "Content", "word": "Live fact", "plain": "Something the tool gathers itself each build and nobody writes by hand.", "example": "An issue's stage, or the modules a pull request touched."},
+    {"id": "word-cap", "group": "Content", "word": "Word cap", "plain": "The most words a record's field may hold; build and check fail when one is over.", "example": "A component's does field holds at most 25 words."},
+    {"id": "drift", "group": "Checking", "word": "Drift", "plain": "An ID in the repo with no record on the map, or a record whose ID is gone.", "example": "An open issue with no line in content.json.", "see": "work"},
+    {"id": "map-folder", "group": "Content", "word": "Map folder", "plain": "The folder holding projmap.json and content.json, found in .projmap, docs/map or docs/projmap.", "example": "This repo keeps its map in .projmap."},
+    {"id": "stage", "group": "Work", "word": "Stage", "plain": "Where an issue stands, picked as the first stage whose conditions hold.", "example": "In review, when a pull request for it is open.", "see": "work"},
+    {"id": "touches", "group": "Work", "word": "Touches", "plain": "The modules an issue changes, read from its pull requests, or predicted from its text when it has none.", "example": "Pull request 4 touched the tool module.", "see": "work"}
+  ],
+  "components": [
+    {"id": "tool", "name": "Tool", "module": "tool", "status": "built", "short": "projmap/cli.py", "does": "Gathers live facts, joins them with content.json, checks caps and drift, and serves or writes the page.", "takes": "projmap.json, content.json, gh, the source tree", "gives": "the page, check results, facts and summary JSON"},
+    {"id": "page", "name": "Page", "status": "built", "short": "projmap/template.html", "does": "One self-contained HTML file that draws every view from the data the tool embeds in it.", "takes": "the data the tool embeds", "gives": "the views a reader sees"},
+    {"id": "skill", "name": "Skill", "module": "skill", "status": "built", "short": "skill/project-map", "does": "Tells Claude how to set up or refresh content.json and propose the change as a pull request.", "takes": "projmap facts and check output", "gives": "a pull request changing content.json"},
+    {"id": "pane", "name": "Pane", "module": "pane", "status": "built", "short": "mod/projmap", "does": "A Claude Code mod that runs projmap summary and shows open issues beside the chat.", "takes": "projmap summary JSON", "gives": "a pane opened with /map"},
+    {"id": "ci", "name": "CI template", "module": "ci", "status": "built", "short": "ci/project-map.yml", "does": "A GitHub Actions workflow that rebuilds the page on issue and pull request changes and publishes it privately.", "takes": "the default branch and GitHub events", "gives": "the page on Cloudflare Pages behind Access"}
+  ],
+  "flow": [["skill", "tool"], ["ci", "tool"], ["tool", "page"], ["tool", "pane"]],
+  "links": [
+    {"from": "tool", "to": "page", "how": "The page reads the data keys the tool embeds, so renaming one breaks a view."},
+    {"from": "tool", "to": "pane", "how": "The pane parses projmap summary output, so changing its JSON shape breaks the pane."},
+    {"from": "tool", "to": "skill", "how": "The skill follows the commands and caps the tool defines; schema.md must match them."},
+    {"from": "tool", "to": "ci", "how": "The workflow installs the tool and runs build and check, so their flags must stay stable."}
+  ],
+  "rules": [
+    {"id": "caps", "name": "Records stay short", "plain": "Every record field has a word cap, and build and check refuse a map with a record over it.", "state": "ok", "ok": "A decision's why in 20 words.", "bad": "A paragraph pasted into a term."},
+    {"id": "private", "name": "The published page stays private", "plain": "The CI template refuses to publish unless the address sends visitors to Cloudflare Access.", "state": "ok", "ok": "Publishing after Access is set up.", "bad": "Publishing to an open pages.dev address."},
+    {"id": "traced", "name": "Records come from the repo", "plain": "Every record traces to a file, issue or pull request; the skill leaves a record out rather than guess.", "state": "part", "ok": "A decision copied from a workflow comment.", "bad": "A reason nobody wrote down."}
+  ],
+  "decisions": [
+    {"id": "D1", "group": "Content", "what": "Every record field has a word cap.", "why": "So the page cannot grow into another long document.", "cost": "Build fails until an over-long record is cut down."},
+    {"id": "D2", "group": "Content", "what": "The tool never writes records; the skill proposes them as a pull request.", "why": "A person approves knowledge, and CI uses no Claude usage.", "cost": "The map lags behind until someone merges a refresh; the drift check says so meanwhile."},
+    {"id": "D3", "group": "CI", "what": "The workflow runs on pull_request_target and never checks out pull request code.", "why": "A pull request cannot change what runs next to the Cloudflare token.", "cost": "The page is always built from the default branch, not from the pull request."},
+    {"id": "D4", "group": "CI", "what": "No concurrency group; each run waits, then stops if a newer run exists.", "why": "A concurrency group cancels earlier runs, and those show as failures.", "cost": "Every run waits 20 seconds before building."},
+    {"id": "D5", "group": "CI", "what": "Publishing stops unless the address redirects to Cloudflare Access.", "why": "The page is private, and an open address must never receive it.", "cost": "Access must be set up before the first publish."}
+  ],
+  "commands": [
+    {"cmd": "projmap init", "plain": "Add a map folder to the repo you are in."},
+    {"cmd": "projmap serve", "plain": "Serve the page on localhost:4400 and rebuild it as things change."},
+    {"cmd": "projmap build", "plain": "Write the page as one HTML file."},
+    {"cmd": "projmap check", "plain": "List drift and over-long records; exits 1 if there are any."},
+    {"cmd": "projmap facts", "plain": "Print the live facts as JSON, for whoever writes the records."},
+    {"cmd": "projmap summary", "plain": "Print a short JSON summary, which the pane reads."}
+  ],
+  "issues": {}
+}
